@@ -12,18 +12,25 @@ const SEED: Record<string, string> = {
   Array: `1|Two Sum|E|https://leetcode.com/problems/two-sum/
 167|Two Sum II - Input Array Is Sorted|M|https://leetcode.com/problems/two-sum-ii-input-array-is-sorted/
 +125|Valid Palindrome|E
++680|Valid Palindrome II|E|https://leetcode.com/problems/valid-palindrome-ii/
 26|Remove Duplicates from Sorted Array|E|https://leetcode.com/problems/remove-duplicates-from-sorted-array/
 +80|Remove Duplicates from Sorted Array II|M
 +303|Range Sum Query - Immutable|E
++525|Contiguous Array|M|https://leetcode.com/problems/contiguous-array/
++523|Continuous Subarray Sum|M|https://leetcode.com/problems/continuous-subarray-sum/
++974|Subarray Sums Divisible by K|M|https://leetcode.com/problems/subarray-sums-divisible-by-k/
++930|Binary Subarrays With Sum|M|https://leetcode.com/problems/binary-subarrays-with-sum/
 238|Product of Array Except Self|M|https://leetcode.com/problems/product-of-array-except-self/
 11|Container With Most Water|M|https://leetcode.com/problems/container-with-most-water/
 42|Trapping Rain Water|H|https://leetcode.com/problems/trapping-rain-water/
 189|Rotate Array|M|https://leetcode.com/problems/rotate-array/
++670|Maximum Swap|M|https://leetcode.com/problems/maximum-swap/
 +31|Next Permutation|M
 283|Move Zeroes|E|https://leetcode.com/problems/move-zeroes/
 +217|Contains Duplicate|E
 +242|Valid Anagram|E
 49|Group Anagrams|M|https://leetcode.com/problems/group-anagrams/
++249|Group Shifted Strings (Premium)|M|https://leetcode.com/problems/group-shifted-strings/
 +271|Encode and Decode Strings (Premium)|M|https://leetcode.com/problems/encode-and-decode-strings/
 268|Missing Number|E|https://leetcode.com/problems/missing-number/
 +41|First Missing Positive|H
@@ -39,9 +46,16 @@ const SEED: Record<string, string> = {
 14|Longest Common Prefix|E|https://leetcode.com/problems/longest-common-prefix/
 +643|Maximum Average Subarray I|E
 3|Longest Substring Without Repeating Characters|M|https://leetcode.com/problems/longest-substring-without-repeating-characters/
++904|Fruit Into Baskets|M|https://leetcode.com/problems/fruit-into-baskets/
++438|Find All Anagrams in a String|M|https://leetcode.com/problems/find-all-anagrams-in-a-string/
 +424|Longest Repeating Character Replacement|M
 +1004|Max Consecutive Ones III|M
 +209|Minimum Size Subarray Sum|M
++713|Subarray Product Less Than K|M|https://leetcode.com/problems/subarray-product-less-than-k/
++1838|Frequency of the Most Frequent Element|M|https://leetcode.com/problems/frequency-of-the-most-frequent-element/
++1423|Maximum Points You Can Obtain from Cards|M|https://leetcode.com/problems/maximum-points-you-can-obtain-from-cards/
++1658|Minimum Operations to Reduce X to Zero|M|https://leetcode.com/problems/minimum-operations-to-reduce-x-to-zero/
++2461|Maximum Sum of Distinct Subarrays With Length K|M|https://leetcode.com/problems/maximum-sum-of-distinct-subarrays-with-length-k/
 +992|Subarrays with K Different Integers|H
 53|Maximum Subarray|M|https://leetcode.com/problems/maximum-subarray/
 +152|Maximum Product Subarray|M
@@ -51,17 +65,27 @@ const SEED: Record<string, string> = {
 392|Is Subsequence|E|https://leetcode.com/problems/is-subsequence/
 1679|Max Number of K-Sum Pairs|M|https://leetcode.com/problems/max-number-of-k-sum-pairs/
 15|3Sum|M|https://leetcode.com/problems/3sum/
++16|3Sum Closest|M|https://leetcode.com/problems/3sum-closest/
++881|Boats to Save People|M|https://leetcode.com/problems/boats-to-save-people/
 +18|4Sum|M
 567|Permutation in String|M|https://leetcode.com/problems/permutation-in-string/
 +20|Valid Parentheses|E
++1249|Minimum Remove to Make Valid Parentheses|M|https://leetcode.com/problems/minimum-remove-to-make-valid-parentheses/
++921|Minimum Add to Make Parentheses Valid|M|https://leetcode.com/problems/minimum-add-to-make-parentheses-valid/
++1541|Minimum Insertions to Balance a Parentheses String|M|https://leetcode.com/problems/minimum-insertions-to-balance-a-parentheses-string/
++856|Score of Parentheses|M|https://leetcode.com/problems/score-of-parentheses/
 +232|Implement Queue using Stacks|E
 +225|Implement Stack using Queues|E
 155|Min Stack|M|https://leetcode.com/problems/min-stack/
 +150|Evaluate Reverse Polish Notation|M
 +71|Simplify Path|M
++394|Decode String|M|https://leetcode.com/problems/decode-string/
++636|Exclusive Time of Functions|M|https://leetcode.com/problems/exclusive-time-of-functions/
 +735|Asteroid Collision|M
++227|Basic Calculator II|M|https://leetcode.com/problems/basic-calculator-ii/
 +224|Basic Calculator|H
 239|Sliding Window Maximum|H|https://leetcode.com/problems/sliding-window-maximum/
++480|Sliding Window Median|H|https://leetcode.com/problems/sliding-window-median/
 +862|Shortest Subarray with Sum at Least K|H
 76|Minimum Window Substring|H|https://leetcode.com/problems/minimum-window-substring/
 +30|Substring with Concatenation of All Words|H
@@ -69,6 +93,8 @@ const SEED: Record<string, string> = {
 +503|Next Greater Element II|M
 739|Daily Temperatures|M|https://leetcode.com/problems/daily-temperatures/
 +901|Online Stock Span|M
++1762|Buildings With an Ocean View (Premium)|M|https://leetcode.com/problems/buildings-with-an-ocean-view/
++1944|Number of Visible People in a Queue|H|https://leetcode.com/problems/number-of-visible-people-in-a-queue/
 +907|Sum of Subarray Minimums|M
 +402|Remove K Digits|M
 +456|132 Pattern|M
@@ -78,9 +104,15 @@ const SEED: Record<string, string> = {
 282|Expression Add Operators|H|https://leetcode.com/problems/expression-add-operators/`,
   'Matrix & Simulation': `+36|Valid Sudoku|M
 +289|Game of Life|M
++498|Diagonal Traverse|M|https://leetcode.com/problems/diagonal-traverse/
++835|Image Overlap|M|https://leetcode.com/problems/image-overlap/
 +6|Zigzag Conversion|M
 +8|String to Integer (atoi)|M
-+68|Text Justification|H`,
++65|Valid Number|H|https://leetcode.com/problems/valid-number/
++165|Compare Version Numbers|M|https://leetcode.com/problems/compare-version-numbers/
++38|Count and Say|M|https://leetcode.com/problems/count-and-say/
++68|Text Justification|H
++273|Integer to English Words|H|https://leetcode.com/problems/integer-to-english-words/`,
   'Linked List': `|Implementation|M
 |Doubly Linked List|M
 206|Reverse Linked List|E|https://leetcode.com/problems/reverse-linked-list/
@@ -98,26 +130,34 @@ const SEED: Record<string, string> = {
 +86|Partition List|M
 146|LRU Cache|M|https://leetcode.com/problems/lru-cache/
 83|Remove Duplicates from Sorted List|E|https://leetcode.com/problems/remove-duplicates-from-sorted-list/
++237|Delete Node in a Linked List|M|https://leetcode.com/problems/delete-node-in-a-linked-list/
++328|Odd Even Linked List|M|https://leetcode.com/problems/odd-even-linked-list/
 +82|Remove Duplicates from Sorted List II|M
 160|Intersection of Two Linked Lists|E|https://leetcode.com/problems/intersection-of-two-linked-lists/
 460|LFU Cache|H|https://leetcode.com/problems/lfu-cache/
 1472|Design Browser History|M|https://leetcode.com/problems/design-browser-history/
 +138|Copy List with Random Pointer|M
++708|Insert into a Sorted Circular Linked List (Premium)|M|https://leetcode.com/problems/insert-into-a-sorted-circular-linked-list/
 +25|Reverse Nodes in k-Group|H`,
   Sorting: `|All Sorting Algorithms|M
 +88|Merge Sorted Array|E
 +912|Sort an Array|M
++179|Largest Number|M|https://leetcode.com/problems/largest-number/
++791|Custom Sort String|M|https://leetcode.com/problems/custom-sort-string/
 +148|Sort List|M
 +493|Reverse Pairs|H
 +164|Maximum Gap|M`,
   Intervals: `+252|Meeting Rooms (Premium)|E|https://leetcode.com/problems/meeting-rooms/
 +56|Merge Intervals|M
 +57|Insert Interval|M
++986|Interval List Intersections|M|https://leetcode.com/problems/interval-list-intersections/
 +435|Non-overlapping Intervals|M
 +452|Minimum Number of Arrows to Burst Balloons|M`,
   'Sweep Line & Difference Array': `+1109|Corporate Flight Bookings|M
++1094|Car Pooling|M|https://leetcode.com/problems/car-pooling/
 +218|The Skyline Problem|H
-+1851|Minimum Interval to Include Each Query|H`,
++1851|Minimum Interval to Include Each Query|H
++3413|Maximum Coins From K Consecutive Bags|M|https://leetcode.com/problems/maximum-coins-from-k-consecutive-bags/`,
   Recursion: `78|Subsets|M|https://leetcode.com/problems/subsets/
 +90|Subsets II|M
 |Subsets Sum No Duplicate Bags in Trolly|M
@@ -125,6 +165,7 @@ const SEED: Record<string, string> = {
 |Target Sum Only one answer Possible|M
 39|Combination Sum - Infinite selection|M|https://leetcode.com/problems/combination-sum/
 +40|Combination Sum II|M
++216|Combination Sum III|M|https://leetcode.com/problems/combination-sum-iii/
 +77|Combinations|M
 |Subset Sum with Infinite Selection and Only one answer|M
 +46|Permutations|M
@@ -132,6 +173,8 @@ const SEED: Record<string, string> = {
 +131|Palindrome Partitioning|M
 +93|Restore IP Addresses|M
 +301|Remove Invalid Parentheses|H
++339|Nested List Weight Sum (Premium)|M|https://leetcode.com/problems/nested-list-weight-sum/
++489|Robot Room Cleaner (Premium)|H|https://leetcode.com/problems/robot-room-cleaner/
 51|N-Queens|H|https://leetcode.com/problems/n-queens/
 52|N-Queens II|H|https://leetcode.com/problems/n-queens-ii/
 37|Sudoku Solver|H|https://leetcode.com/problems/sudoku-solver/
@@ -149,19 +192,25 @@ const SEED: Record<string, string> = {
 104|Maximum Depth of Binary Tree|E|https://leetcode.com/problems/maximum-depth-of-binary-tree/
 +110|Balanced Binary Tree|E
 +222|Count Complete Tree Nodes|E
++958|Check Completeness of a Binary Tree|M|https://leetcode.com/problems/check-completeness-of-a-binary-tree/
 543|Diameter of Binary Tree|E|https://leetcode.com/problems/diameter-of-binary-tree/
 100|Same Tree|E|https://leetcode.com/problems/same-tree/
 572|Subtree of Another Tree|E|https://leetcode.com/problems/subtree-of-another-tree/
 +112|Path Sum|E
++113|Path Sum II|M|https://leetcode.com/problems/path-sum-ii/
++437|Path Sum III|M|https://leetcode.com/problems/path-sum-iii/
 +129|Sum Root to Leaf Numbers|M
 +1448|Count Good Nodes in Binary Tree|M
 +98|Validate Binary Search Tree|M
 +108|Convert Sorted Array to Binary Search Tree|E
 +230|Kth Smallest Element in a BST|M
++1038|Binary Search Tree to Greater Sum Tree|M|https://leetcode.com/problems/binary-search-tree-to-greater-sum-tree/
 +173|Binary Search Tree Iterator|M
 +99|Recover Binary Search Tree|M
++426|Convert Binary Search Tree to Sorted Doubly Linked List (Premium)|M|https://leetcode.com/problems/convert-binary-search-tree-to-sorted-doubly-linked-list/
 235|Lowest Common Ancestor of a Binary Search Tree|M|https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-search-tree/
 236|Lowest Common Ancestor of a Binary Tree|M|https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree/
++1650|Lowest Common Ancestor of a Binary Tree III (Premium)|M|https://leetcode.com/problems/lowest-common-ancestor-of-a-binary-tree-iii/
 +863|All Nodes Distance K in Binary Tree|M
 103|Binary Tree Zigzag Level Order Traversal|M|https://leetcode.com/problems/binary-tree-zigzag-level-order-traversal/
 +199|Binary Tree Right Side View|M
@@ -169,6 +218,7 @@ const SEED: Record<string, string> = {
 +662|Maximum Width of Binary Tree|M
 |Top View of BTREE|M
 987|Vertical Order Traversal of a Binary Tree|H|https://leetcode.com/problems/vertical-order-traversal-of-a-binary-tree/
++314|Binary Tree Vertical Order Traversal (Premium)|M|https://leetcode.com/problems/binary-tree-vertical-order-traversal/
 |Full Binary Tree using Array|M
 +105|Construct Binary Tree from Preorder and Inorder Traversal|M
 +114|Flatten Binary Tree to Linked List|M
@@ -179,11 +229,15 @@ const SEED: Record<string, string> = {
 +1046|Last Stone Weight|E
 +703|Kth Largest Element in a Stream|E
 +215|Kth Largest Element in an Array|M
++692|Top K Frequent Words|M|https://leetcode.com/problems/top-k-frequent-words/
++451|Sort Characters By Frequency|M|https://leetcode.com/problems/sort-characters-by-frequency/
 +973|K Closest Points to Origin|M
 +373|Find K Pairs with Smallest Sums|M
 +23|Merge k Sorted Lists|H
 +632|Smallest Range Covering Elements from K Lists|H
 +621|Task Scheduler|M
++2402|Meeting Rooms III|H|https://leetcode.com/problems/meeting-rooms-iii/
++857|Minimum Cost to Hire K Workers|H|https://leetcode.com/problems/minimum-cost-to-hire-k-workers/
 +767|Reorganize String|M
 +295|Find Median from Data Stream|H
 +502|IPO|H`,
@@ -193,9 +247,15 @@ const SEED: Record<string, string> = {
 +981|Time Based Key-Value Store|M
 +355|Design Twitter|M
 +382|Linked List Random Node|M
++398|Random Pick Index|M|https://leetcode.com/problems/random-pick-index/
 +384|Shuffle an Array|M
 +528|Random Pick with Weight|M
-+1146|Snapshot Array|M`,
++1146|Snapshot Array|M
++362|Design Hit Counter (Premium)|M|https://leetcode.com/problems/design-hit-counter/
++348|Design Tic-Tac-Toe (Premium)|M|https://leetcode.com/problems/design-tic-tac-toe/
++284|Peeking Iterator|M|https://leetcode.com/problems/peeking-iterator/
++341|Flatten Nested List Iterator|M|https://leetcode.com/problems/flatten-nested-list-iterator/
++1570|Dot Product of Two Sparse Vectors (Premium)|M|https://leetcode.com/problems/dot-product-of-two-sparse-vectors/`,
   'Segment Tree & Fenwick Tree': `+|Segment Tree Implementation (with Lazy Propagation)|H
 +307|Range Sum Query - Mutable|M
 +|Fenwick Tree (Binary Indexed Tree) Implementation|M
@@ -208,6 +268,7 @@ const SEED: Record<string, string> = {
 +286|Walls and Gates (Premium)|M|https://leetcode.com/problems/walls-and-gates/
 200|Number of Islands|M|https://leetcode.com/problems/number-of-islands/
 +695|Max Area of Island|M
++827|Making A Large Island|H|https://leetcode.com/problems/making-a-large-island/
 733|Flood Fill|E|https://leetcode.com/problems/flood-fill/
 |Number of Lakes|M
 +130|Surrounded Regions|M
@@ -224,10 +285,12 @@ const SEED: Record<string, string> = {
 +127|Word Ladder|H
 +433|Minimum Genetic Mutation|M
 +909|Snakes and Ladders|M
++815|Bus Routes|H|https://leetcode.com/problems/bus-routes/
 |Djikstras Imp|H
 743|Network Delay Time|M|https://leetcode.com/problems/network-delay-time/
 +1631|Path With Minimum Effort|M
 +1976|Number of Ways to Arrive at Destination|M
++2812|Find the Safest Path in a Grid|M|https://leetcode.com/problems/find-the-safest-path-in-a-grid/
 |Bellman Impl|H
 787|Cheapest Flights Within K Stops|M|https://leetcode.com/problems/cheapest-flights-within-k-stops/
 |Topological Sort BFS ( Kahn's)|M
@@ -247,7 +310,8 @@ const SEED: Record<string, string> = {
 +684|Redundant Connection|M
 +721|Accounts Merge|M
 +947|Most Stones Removed with Same Row or Column|M
-+1319|Number of Operations to Make Network Connected|M`,
++1319|Number of Operations to Make Network Connected|M
++990|Satisfiability of Equality Equations|M|https://leetcode.com/problems/satisfiability-of-equality-equations/`,
   'Advanced Graphs': `+778|Swim in Rising Water|H
 +1368|Minimum Cost to Make at Least One Valid Path in a Grid|H
 +847|Shortest Path Visiting All Nodes|H
@@ -255,7 +319,8 @@ const SEED: Record<string, string> = {
 +|Kosaraju's Algorithm (Strongly Connected Components)|H
 +1192|Critical Connections in a Network|H
 +1489|Find Critical and Pseudo-Critical Edges in Minimum Spanning Tree|H
-+1483|Kth Ancestor of a Tree Node|H`,
++1483|Kth Ancestor of a Tree Node|H
++2858|Minimum Edge Reversals So Every Node Is Reachable|H|https://leetcode.com/problems/minimum-edge-reversals-so-every-node-is-reachable/`,
   Tries: `208|Implement Trie (Prefix Tree)|M|https://leetcode.com/problems/implement-trie-prefix-tree/
 +211|Design Add and Search Words Data Structure|M
 |Search Suggestion|M
@@ -277,13 +342,17 @@ const SEED: Record<string, string> = {
 |Get one combination which adds to target memo (limited supply)|M
 198|House Robber|M|https://leetcode.com/problems/house-robber/
 213|House Robber II|M|https://leetcode.com/problems/house-robber-ii/
++740|Delete and Earn|M|https://leetcode.com/problems/delete-and-earn/
 64|Minimum Path Sum|M|https://leetcode.com/problems/minimum-path-sum/
 +120|Triangle|M
 +221|Maximal Square|M
 +174|Dungeon Game|H
 +741|Cherry Pickup|H
++1463|Cherry Pickup II|H|https://leetcode.com/problems/cherry-pickup-ii/
 |KnapSack01|M
 +416|Partition Equal Subset Sum|M
++1049|Last Stone Weight II|M|https://leetcode.com/problems/last-stone-weight-ii/
++474|Ones and Zeroes|M|https://leetcode.com/problems/ones-and-zeroes/
 322|Coin Change|M|https://leetcode.com/problems/coin-change/
 +518|Coin Change II|M
 +377|Combination Sum IV|M
@@ -293,6 +362,7 @@ const SEED: Record<string, string> = {
 123|Best Time to Buy and Sell Stock III|H|https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iii/
 188|Best Time to Buy and Sell Stock IV|H|https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/
 +309|Best Time to Buy and Sell Stock with Cooldown|M
++714|Best Time to Buy and Sell Stock with Transaction Fee|M|https://leetcode.com/problems/best-time-to-buy-and-sell-stock-with-transaction-fee/
 91|Decode Ways|M|https://leetcode.com/problems/decode-ways/
 55|Jump Game|M|https://leetcode.com/problems/jump-game/
 +45|Jump Game II|M
@@ -305,11 +375,14 @@ const SEED: Record<string, string> = {
 +1092|Shortest Common Supersequence|H
 +97|Interleaving String|M
 +115|Distinct Subsequences|H
++940|Distinct Subsequences II|H|https://leetcode.com/problems/distinct-subsequences-ii/
 516|Longest Palindromic Subsequence|M|https://leetcode.com/problems/longest-palindromic-subsequence/
++1216|Valid Palindrome III (Premium)|H|https://leetcode.com/problems/valid-palindrome-iii/
 5|Longest Palindromic Substring|M|https://leetcode.com/problems/longest-palindromic-substring/
 +647|Palindromic Substrings|M
 +132|Palindrome Partitioning II|H
 +1043|Partition Array for Maximum Sum|M
++1335|Minimum Difficulty of a Job Schedule|H|https://leetcode.com/problems/minimum-difficulty-of-a-job-schedule/
 |All subsequences Pattern(Sub problems approcah)|M
 560|Subarray Sum Equals K|M|https://leetcode.com/problems/subarray-sum-equals-k/
 |DP On strings|M
@@ -323,7 +396,10 @@ const SEED: Record<string, string> = {
 +968|Binary Tree Cameras|H
 +698|Partition to K Equal Sum Subsets|M
 +1039|Minimum Score Triangulation of Polygon|M
++1478|Allocate Mailboxes|H|https://leetcode.com/problems/allocate-mailboxes/
 +486|Predict the Winner|M
++877|Stone Game|M|https://leetcode.com/problems/stone-game/
++1140|Stone Game II|M|https://leetcode.com/problems/stone-game-ii/
 +354|Russian Doll Envelopes|H
 +1235|Maximum Profit in Job Scheduling|H
 +10|Regular Expression Matching|H
@@ -344,6 +420,7 @@ const SEED: Record<string, string> = {
 33|Search in Rotated Sorted Array|M|https://leetcode.com/problems/search-in-rotated-sorted-array/
 +81|Search in Rotated Sorted Array II|M
 +162|Find Peak Element|M
++658|Find K Closest Elements|M|https://leetcode.com/problems/find-k-closest-elements/
 +540|Single Element in a Sorted Array|M
 875|Koko Eating Bananas|M|https://leetcode.com/problems/koko-eating-bananas/
 +1482|Minimum Number of Days to Make m Bouquets|M
@@ -357,6 +434,7 @@ const SEED: Record<string, string> = {
 +4|Median of Two Sorted Arrays|H`,
   String: `+28|Find the Index of the First Occurrence in a String|E
 |Rabin Karp|H
++187|Repeated DNA Sequences|M|https://leetcode.com/problems/repeated-dna-sequences/
 |KMP search|H
 +|Z-Algorithm|H
 +214|Shortest Palindrome|H
