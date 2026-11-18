@@ -15,41 +15,30 @@ export interface Language {
 export const LANGUAGES: Language[] = [
   {
     id: 'python', label: 'Python', monaco: 'python', ext: 'py', runs: 'browser', debug: 'browser',
-    template: `class Solution:
-    def solve(self, nums: list[int]) -> int:
-        total = 0
-        for n in nums:
-            total += n
-        return total
+    template: `def main():
+    pass
 
 
-print(Solution().solve([1, 2, 3]))
+if __name__ == "__main__":
+    main()
 `,
   },
   {
     id: 'javascript', label: 'JavaScript', monaco: 'javascript', ext: 'js', runs: 'browser', debug: 'browser',
-    template: `function solve(nums) {
-  let total = 0;
-  for (const n of nums) {
-    total += n;
-  }
-  return total;
+    template: `function main() {
+  
 }
 
-console.log(solve([1, 2, 3]));
+main();
 `,
   },
   {
     id: 'typescript', label: 'TypeScript', monaco: 'typescript', ext: 'ts', runs: 'browser', debug: 'browser',
-    template: `function solve(nums: number[]): number {
-  let total = 0;
-  for (const n of nums) {
-    total += n;
-  }
-  return total;
+    template: `function main(): void {
+  
 }
 
-console.log(solve([1, 2, 3]));
+main();
 `,
   },
   {
@@ -57,36 +46,23 @@ console.log(solve([1, 2, 3]));
     template: `import java.util.*;
 
 public class Main {
-    static int solve(int[] nums) {
-        int total = 0;
-        for (int n : nums) {
-            total += n;
-        }
-        return total;
-    }
-
     public static void main(String[] args) {
-        System.out.println(solve(new int[]{1, 2, 3}));
+        
     }
 }
 `,
   },
   {
     id: 'cpp', label: 'C++', monaco: 'cpp', ext: 'cpp', runs: 'server', debug: 'server',
-    template: `#include <bits/stdc++.h>
+    template: `#include <algorithm>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 using namespace std;
 
-int solve(vector<int>& nums) {
-    int total = 0;
-    for (int n : nums) {
-        total += n;
-    }
-    return total;
-}
-
 int main() {
-    vector<int> nums = {1, 2, 3};
-    cout << solve(nums) << endl;
+    
     return 0;
 }
 `,
@@ -95,17 +71,8 @@ int main() {
     id: 'c', label: 'C', monaco: 'c', ext: 'c', runs: 'server', debug: 'server',
     template: `#include <stdio.h>
 
-int solve(int *nums, int n) {
-    int total = 0;
-    for (int i = 0; i < n; i++) {
-        total += nums[i];
-    }
-    return total;
-}
-
 int main(void) {
-    int nums[] = {1, 2, 3};
-    printf("%d\\n", solve(nums, 3));
+    
     return 0;
 }
 `,
@@ -114,77 +81,68 @@ int main(void) {
     id: 'go', label: 'Go', monaco: 'go', ext: 'go', runs: 'server', debug: null,
     template: `package main
 
-import "fmt"
-
-func solve(nums []int) int {
-	total := 0
-	for _, n := range nums {
-		total += n
-	}
-	return total
-}
-
 func main() {
-	fmt.Println(solve([]int{1, 2, 3}))
+	
 }
 `,
   },
   {
     id: 'rust', label: 'Rust', monaco: 'rust', ext: 'rs', runs: 'server', debug: null,
-    template: `fn solve(nums: &[i32]) -> i32 {
-    nums.iter().sum()
-}
-
-fn main() {
-    println!("{}", solve(&[1, 2, 3]));
+    template: `fn main() {
+    
 }
 `,
   },
   {
     id: 'csharp', label: 'C#', monaco: 'csharp', ext: 'cs', runs: 'server', debug: null,
     template: `using System;
-using System.Linq;
+using System.Collections.Generic;
 
-int Solve(int[] nums) => nums.Sum();
-
-Console.WriteLine(Solve(new[] { 1, 2, 3 }));
+class Program
+{
+    static void Main()
+    {
+        
+    }
+}
 `,
   },
   {
     id: 'kotlin', label: 'Kotlin', monaco: 'kotlin', ext: 'kt', runs: 'server', debug: null,
-    template: `fun solve(nums: IntArray): Int = nums.sum()
-
-fun main() {
-    println(solve(intArrayOf(1, 2, 3)))
+    template: `fun main() {
+    
 }
 `,
   },
   {
     id: 'swift', label: 'Swift', monaco: 'swift', ext: 'swift', runs: 'server', debug: null,
-    template: `func solve(_ nums: [Int]) -> Int {
-    return nums.reduce(0, +)
+    template: `import Foundation
+
+func main() {
+    
 }
 
-print(solve([1, 2, 3]))
+main()
 `,
   },
   {
     id: 'ruby', label: 'Ruby', monaco: 'ruby', ext: 'rb', runs: 'server', debug: null,
-    template: `def solve(nums)
-  nums.sum
+    template: `def main
+  
 end
 
-puts solve([1, 2, 3])
+main
 `,
   },
   {
     id: 'php', label: 'PHP', monaco: 'php', ext: 'php', runs: 'server', debug: null,
     template: `<?php
-function solve(array $nums): int {
-    return array_sum($nums);
+
+function main(): void {
+    
 }
 
-echo solve([1, 2, 3]), PHP_EOL;
+main();
 `,
   },
 ];
