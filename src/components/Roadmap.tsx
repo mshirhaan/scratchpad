@@ -197,7 +197,7 @@ export default function Roadmap() {
               </button>
               {isOpen &&
                 list.map((p) => (
-                  <div className={`prow${p.id === activeId ? ' current' : ''}`} key={p.id}>
+                  <div className={`prow${p.id === activeId ? ' current' : ''}${p.added ? ' added' : ''}`} key={p.id}>
                     <button
                       className={`check ${p.status}`}
                       onClick={() => s.setStatus(p.id, NEXT[p.status])}
@@ -209,6 +209,7 @@ export default function Roadmap() {
                     <button className="ptitle" onClick={() => void s.openWorkspace(p.id)}>
                       {p.number ? <span className="pnum">{p.number}.</span> : null} {p.title}
                     </button>
+                    {p.added && <span className="added-tag" title="Not in your original list: added to fill a gap in the plan">added</span>}
                     {p.status === 'attempted' && <span className="tag">in progress</span>}
                     <span className={`diff diff-${p.difficulty.toLowerCase()}`}>{p.difficulty}</span>
                     <span className="prow-actions">

@@ -15,6 +15,8 @@ export interface Problem {
   status: Status;
   solvedAt?: number;
   custom?: boolean;
+  /** Built-in problem added to fill a gap in the original plan (shown with an "added" marker). */
+  added?: boolean;
 }
 
 export interface Scene {
