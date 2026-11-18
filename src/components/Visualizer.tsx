@@ -199,14 +199,42 @@ function SetView({ name, v, prev }: { name: string; v: Obj; prev: Val | undefine
   );
 }
 
-export default function Visualizer({ vars, prevVars }: { vars: Vars; prevVars: Vars | null }) {
+const isStructure = (v: Val) => isSeq(v) || isMap(v) || isSet(v);
+/** Fields of an object that usually say how much of its array is in use. */
+const SIZE_FIELD = /^(?:size|count|length|len|top)$/i;
+
+/**
+ * Objects such as self / this that hold arrays, maps or sets are drawn through
+ * their fields, named like self.arr and self.count. Other objects (a linked
+ * list node, say) are left out, as before.
+ */
+function expand(vars: Vars): Vars {
+  const out: Vars = [];
+  for (const [name, v] of vars) {
+    if (isObj(v) && !isStructure(v) && v.e.some(([, x]) => isStructure(x))) {
+      for (const [k, x] of v.e) if (isObj(x) ? isStructure(x) : x.k !== 'fn') out.push([`${name}.${k}`, x]);
+    } else {
+      out.push([name, v]);
+    }
+  }
+  return out;
+}
+
+const isPointer = (name: string) => {
+  const field = name.slice(name.lastIndexOf('.') + 1);
+  return isPointerName(field) || (field !== name && SIZE_FIELD.test(field));
+};
+
+export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }: { vars: Vars; prevVars: Vars | null }) {
+  const vars = expand(frameVars);
+  const prevVars = prevFrameVars && expand(prevFrameVars);
   const prev = new Map(prevVars ?? []);
 
   // Index variables: integer locals with pointer-like names, each with its own colour.
   const pointers: Pointer[] = [];
   for (const [name, v] of vars) {
     const n = intOf(v);
-    if (n !== null && isPointerName(name)) pointers.push({ name, value: n, color: POINTER_COLORS[pointers.length % POINTER_COLORS.length] });
+    if (n !== null && isPointer(name)) pointers.push({ name, value: n, color: POINTER_COLORS[pointers.length % POINTER_COLORS.length] });
   }
   const pointerColor = new Map(pointers.map((p) => [p.name, p.color]));
   const inRange = (len: number) => pointers.filter((p) => p.value >= 0 && p.value <= len);

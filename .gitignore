@@ -5,3 +5,4 @@ public/pyodide
 public/excalidraw-assets
 *.log
 *.tsbuildinfo
+.DS_Store

@@ -14,6 +14,8 @@ type Node = any;
 interface Scope {
   names: string[];
   fn: boolean;
+  /** Function scopes: every identifier used in the body, to pick the outer variables worth showing. */
+  uses?: Set<string>;
 }
 
 interface Edit {
@@ -32,6 +34,25 @@ function patternNames(p: Node, out: string[]) {
     case 'RestElement': patternNames(p.argument, out); break;
     case 'AssignmentPattern': patternNames(p.left, out); break;
   }
+}
+
+/** Identifiers a function body refers to (property names excluded). Rough, but only used as a filter. */
+function usedNames(node: Node, out = new Set<string>()): Set<string> {
+  if (!node || typeof node.type !== 'string') return out;
+  if (node.type === 'Identifier') {
+    out.add(node.name);
+    return out;
+  }
+  for (const key of Object.keys(node)) {
+    if (key === 'loc' || key === 'type') continue;
+    if (key === 'property' && node.type === 'MemberExpression' && !node.computed) continue;
+    if (key === 'key' && !node.computed && (node.type === 'Property' || node.type === 'MethodDefinition' || node.type === 'PropertyDefinition')) continue;
+    if (key === 'label') continue;
+    const child = node[key];
+    if (Array.isArray(child)) child.forEach((c) => usedNames(c, out));
+    else if (child && typeof child.type === 'string') usedNames(child, out);
+  }
+  return out;
 }
 
 const isFn = (n: Node) => n.type === 'FunctionDeclaration' || n.type === 'FunctionExpression' || n.type === 'ArrowFunctionExpression';
@@ -72,13 +93,24 @@ export function instrument(code: string): string {
 
   function trace(line: number): string {
     const names: string[] = [];
-    for (let i = scopes.length - 1; i >= 0; i--) {
+    let i = scopes.length - 1;
+    for (; i >= 0; i--) {
       for (const n of scopes[i].names) if (!names.includes(n)) names.push(n);
       if (scopes[i].fn) break;
     }
-    if (!names.length) return `__t(${line})`;
-    const cases = names.map((n, i) => `case ${i}:return ${n};`).join('');
-    return `__t(${line},"${names.join(',')}",__k=>{switch(__k){${cases}}})`;
+    // Variables from enclosing scopes (a top-level memo table, say) that this
+    // function uses. They come after a "|" so the worker can tell them apart.
+    const outer: string[] = [];
+    const uses = scopes[i]?.uses;
+    if (uses) {
+      for (let k = i - 1; k >= 0; k--) {
+        for (const n of scopes[k].names) if (uses.has(n) && !names.includes(n) && !outer.includes(n)) outer.push(n);
+      }
+    }
+    const all = [...names, ...outer];
+    if (!all.length) return `__t(${line})`;
+    const cases = all.map((n, j) => `case ${j}:return ${n};`).join('');
+    return `__t(${line},"${names.join(',')}${outer.length ? `|${outer.join(',')}` : ''}",__k=>{switch(__k){${cases}}})`;
   }
 
   function fnName(node: Node, parent: Node): string {
@@ -95,19 +127,23 @@ export function instrument(code: string): string {
 
   function visitFunction(node: Node, parent: Node) {
     const names: string[] = [];
+    // Methods (class or object) show `this`, so this.arr and friends can be drawn.
+    const isMethod = node.type !== 'ArrowFunctionExpression' && parent && (parent.type === 'MethodDefinition' || (parent.type === 'Property' && parent.method));
+    if (isMethod) names.push('this');
     for (const p of node.params) patternNames(p, names);
+    const uses = usedNames(node.body);
     const name = JSON.stringify(fnName(node, parent));
     for (const p of node.params) visit(p, node);
     if (node.body.type === 'BlockStatement') {
       hoistedVars(node.body, names);
       lexicalNames(node.body.body, names);
-      scopes.push({ names, fn: true });
+      scopes.push({ names, fn: true, uses });
       open(node.body.start + 1, `__e(${name});try{`);
       close(node.body.end - 1, `}finally{__x()}`);
       visitStatements(node.body.body);
       scopes.pop();
     } else {
-      scopes.push({ names, fn: true });
+      scopes.push({ names, fn: true, uses });
       const t = trace(node.body.loc.start.line).slice(4, -1); // arguments of __t(...)
       open(node.body.start, `__w(${name},${t.includes(',') ? t : `${t},"",null`},${node.async ? 'async' : ''}()=>(`);
       close(node.body.end, '))');

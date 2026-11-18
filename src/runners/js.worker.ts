@@ -158,7 +158,8 @@ self.onmessage = async (ev: MessageEvent) => {
   const steps: Step[] = [];
   const stack: Frame[] = [{ name: '<main>', line: 0, vars: [], id: 0 }];
   let callSeq = 0;
-  const nameCache = new Map<string, string[]>();
+  /** names string -> [all names, how many are the function's own (the rest are outer variables)] */
+  const nameCache = new Map<string, [string[], number]>();
   let lastKey = '';
   let truncated = false;
   let lastLine = 0;
@@ -175,8 +176,13 @@ self.onmessage = async (ev: MessageEvent) => {
     top.line = line;
     lastLine = line;
     if (names) {
-      let list = nameCache.get(names);
-      if (!list) nameCache.set(names, (list = names.split(',')));
+      let entry = nameCache.get(names);
+      if (!entry) {
+        const [own, outer] = names.split('|');
+        const ownList = own ? own.split(',') : [];
+        nameCache.set(names, (entry = [[...ownList, ...(outer ? outer.split(',') : [])], ownList.length]));
+      }
+      const [list, ownCount] = entry;
       const vars: [string, Val][] = [];
       for (let i = 0; i < list.length; i++) {
         let value;
@@ -186,6 +192,9 @@ self.onmessage = async (ev: MessageEvent) => {
           continue; // declared later on (temporal dead zone)
         }
         if (typeof value === 'function' && /^class\s/.test(Function.prototype.toString.call(value))) continue;
+        // Outer helper functions are noise; outer data (memo tables, shared arrays) is what matters.
+        if (i >= ownCount && typeof value === 'function') continue;
+        if (list[i] === 'this' && (value === undefined || value === globalThis)) continue;
         vars.push([list[i], snap(value, 5)]);
       }
       top.vars = vars;

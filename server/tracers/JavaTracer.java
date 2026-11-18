@@ -187,6 +187,15 @@ public class JavaTracer {
         record(thread, msg, null);
     }
 
+    static boolean isPrimitive(Field f) {
+        switch (f.typeName()) {
+            case "int": case "long": case "short": case "byte": case "char": case "boolean": case "float": case "double":
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /** One step. With a return value, a "return" step: it is added to the innermost frame's variables. */
     static void record(ThreadReference thread, String msg, Value ret) {
         try {
@@ -214,17 +223,38 @@ public class JavaTracer {
                     stack.append(']');
                     firstVar = false;
                 }
+                Set<String> localNames = new HashSet<>();
                 try {
                     List<LocalVariable> vars = f.visibleVariables();
                     Map<LocalVariable, Value> values = f.getValues(vars);
                     for (LocalVariable lv : vars) {
                         if (!firstVar) stack.append(',');
                         firstVar = false;
+                        localNames.add(lv.name());
                         stack.append('[').append(quote(lv.name())).append(',');
                         ser(values.get(lv), MAX_DEPTH, stack);
                         stack.append(']');
                     }
                 } catch (AbsentInformationException ignored) {
+                }
+                // Static fields of the method's class (static int[] dp, static Map memo, ...),
+                // which the code reads like locals. Constants (static final primitives and
+                // strings) are left out, and so is anything a local of the same name hides.
+                ReferenceType type = loc.declaringType();
+                for (Field fld : type.fields()) {
+                    if (!fld.isStatic() || fld.isSynthetic() || localNames.contains(fld.name())) continue;
+                    if (fld.isFinal() && (isPrimitive(fld) || fld.typeName().equals("java.lang.String"))) continue;
+                    Value val;
+                    try {
+                        val = type.getValue(fld);
+                    } catch (Exception e) {
+                        continue; // class not initialised yet
+                    }
+                    if (!firstVar) stack.append(',');
+                    firstVar = false;
+                    stack.append('[').append(quote(fld.name())).append(',');
+                    ser(val, MAX_DEPTH, stack);
+                    stack.append(']');
                 }
                 if (ret != null && i == 0) {
                     if (!firstVar) stack.append(',');

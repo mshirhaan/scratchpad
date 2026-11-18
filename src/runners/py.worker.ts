@@ -6,7 +6,7 @@
 const post = (m: unknown) => (self as unknown as Worker).postMessage(m);
 
 const HARNESS = String.raw`
-import sys, io, json, traceback, types, collections
+import sys, io, json, traceback, types, collections, dis
 
 _FILE = "main.py"
 _MAX_ITEMS = 60
@@ -120,6 +120,15 @@ def _ser(v, depth):
         attrs = None
         if hasattr(v, "__dict__") and isinstance(getattr(v, "__dict__", None), dict):
             attrs = dict(v.__dict__)
+            # Fields declared on the class (arr = [] in the class body) are what
+            # self.arr reads until the instance assigns its own; show them too.
+            for cls in type(v).__mro__:
+                if cls.__module__ != "__main__":
+                    continue
+                for k, x in cls.__dict__.items():
+                    if k.startswith("__") or k in attrs or callable(x) or isinstance(x, (staticmethod, classmethod, property)):
+                        continue
+                    attrs[k] = x
         slots = getattr(type(v), "__slots__", None)
         if slots:
             attrs = attrs or {}
@@ -139,14 +148,41 @@ class _StepLimit(BaseException):
 
 _SKIP = (types.ModuleType, types.FunctionType, type)
 
+_global_names = {}
+
+def _globals_used(code):
+    """Module-level names a function reads or writes (memo tables, shared lists, ...)."""
+    names = _global_names.get(code)
+    if names is None:
+        names = []
+        try:
+            for ins in dis.get_instructions(code):
+                if ins.opname in ("LOAD_GLOBAL", "STORE_GLOBAL", "DELETE_GLOBAL") and ins.argval not in names:
+                    names.append(ins.argval)
+        except Exception:
+            pass
+        _global_names[code] = names
+    return names
+
 def _frame_vars(frame):
     out = []
-    for k, v in list(frame.f_locals.items()):
+    local = frame.f_locals
+    for k, v in list(local.items()):
         if k.startswith("__") and k.endswith("__"):
             continue
         if isinstance(v, _SKIP):
             continue
         out.append([k, _ser(v, 5)])
+    # Inside a function, also show the globals it uses.
+    if frame.f_code.co_name != "<module>":
+        g = frame.f_globals
+        for k in _globals_used(frame.f_code):
+            if k in local or k not in g or (k.startswith("__") and k.endswith("__")):
+                continue
+            v = g[k]
+            if isinstance(v, _SKIP) or callable(v):
+                continue
+            out.append([k, _ser(v, 5)])
     return out
 
 def debug_code(src, stdin, max_steps):

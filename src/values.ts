@@ -38,7 +38,9 @@ export function isSet(v: Val): boolean {
 
 export function isSeq(v: Val): boolean {
   if (!isObj(v) || isSet(v) || MAP_LABEL.test(v.label) || collapsed(v)) return false;
-  if (v.e.length === 0) return SEQ_LABEL.test(v.label);
+  // Empty: only a real container, whose label carries its size ("list (0)", "int[0]"),
+  // not an object of a class that happens to be called e.g. ArrayList.
+  if (v.e.length === 0) return SEQ_LABEL.test(v.label) && /\(\d+\)|\[\d*\]/.test(v.label);
   return v.e.every(([k], i) => k === String(i));
 }
 
