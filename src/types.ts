@@ -77,6 +77,8 @@ export interface Settings {
   /** Right-hand side of the debugger: drawn data structures, or the variable tree. */
   debugView?: 'visual' | 'calls' | 'vars';
   lastSync?: number;
+  /** Run the code automatically a moment after each edit. */
+  autoRun?: boolean;
 }
 
 // ---- Debugger trace (same shape from every language backend) ----

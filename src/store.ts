@@ -73,7 +73,8 @@ interface State {
   setStatus: (id: string, status: Status) => void;
   resetProgress: () => void;
 
-  runCode: () => void;
+  /** `auto`: started by auto-run. It doesn't switch tabs, and replaces or queues behind a run in progress. */
+  runCode: (opts?: { auto?: boolean }) => void;
   startDebug: () => void;
   stop: () => void;
   stopDebug: () => void;
@@ -95,6 +96,13 @@ interface State {
 let wsTimer: ReturnType<typeof setTimeout> | undefined;
 let metaTimer: ReturnType<typeof setTimeout> | undefined;
 let job: Job<RunResult> | Job<Trace> | null = null;
+/** Bumped for every run; output from an older, replaced run is dropped. */
+let runSeq = 0;
+/** Auto-run asked for a run while one was going: start another when it ends. */
+let autoPending = false;
+let autoRecheck: ReturnType<typeof setTimeout> | undefined;
+/** A run still going this long after it started executing is probably stuck (e.g. a half-written loop). */
+const AUTO_REPLACE_MS = 1500;
 
 const newWorkspace = (id: string, language: LangId): Workspace => {
   const file: CodeFile = { id: db.uid('f'), name: 'main', language, code: {}, notes: '' };
@@ -343,13 +351,56 @@ export const useStore = create<State>((set, get) => {
       saveMetaSoon();
     },
 
-    runCode() {
-      const { ws, settings, running } = get();
-      if (!ws || running) return;
+    runCode(opts) {
+      const auto = Boolean(opts?.auto);
+      const { ws, settings, running, trace } = get();
+      if (!ws) return;
+      if (auto) {
+        // Never interrupt the debugger.
+        if (running === 'debug' || trace) return;
+        if (running === 'run') {
+          // Let a normal run finish (stopping Python restarts its runtime, which
+          // is slow); replace it only if it looks stuck.
+          const started = job?.startedAt?.();
+          if (started == null || performance.now() - started < AUTO_REPLACE_MS) {
+            autoPending = true;
+            // If it is still going once it counts as stuck, replace it then
+            // rather than waiting for the time limit.
+            clearTimeout(autoRecheck);
+            const wait = started == null ? AUTO_REPLACE_MS : AUTO_REPLACE_MS - (performance.now() - started) + 50;
+            autoRecheck = setTimeout(() => {
+              if (autoPending && get().running === 'run') get().runCode({ auto: true });
+            }, wait);
+            return;
+          }
+          runSeq++; // drop the old run's output
+          job?.cancel();
+          job = null;
+        }
+      } else if (running === 'debug') {
+        return;
+      } else if (running === 'run') {
+        // Run pressed while a run (usually an auto-run) is going: start over.
+        runSeq++;
+        job?.cancel();
+        job = null;
+      }
+      autoPending = false;
+      clearTimeout(autoRecheck);
       endDebug();
       const lang = LANG_BY_ID[activeFile(ws).language];
-      set({ running: 'run', output: [], bottomTab: 'console' });
-      const append = (c: OutChunk) => set((s) => ({ output: [...s.output, c] }));
+      const my = ++runSeq;
+      // An auto-run keeps the previous output on screen until its own first
+      // output (or its finish line) arrives, so the console doesn't flicker.
+      let fresh = !auto;
+      set(auto ? { running: 'run' } : { running: 'run', output: [], bottomTab: 'console' });
+      const append = (c: OutChunk) => {
+        if (my !== runSeq) return;
+        if (!fresh) {
+          fresh = true;
+          set({ output: [c] });
+        } else set((s) => ({ output: [...s.output, c] }));
+      };
       const j = runJob(activeFile(ws).language, currentCode(ws), ws.stdin, settings.backendUrl, (s, t) => append({ s, t }));
       job = j;
       j.promise
@@ -364,13 +415,25 @@ export const useStore = create<State>((set, get) => {
         .catch((e) => append({ s: 'error', t: `${e instanceof RunError ? e.message : String(e)}\n` }))
         .finally(() => {
           if (job === j) job = null;
+          if (my !== runSeq) return; // replaced by a newer run
           set({ running: null });
+          if (autoPending) {
+            autoPending = false;
+            get().runCode({ auto: true });
+          }
         });
     },
 
     startDebug() {
       const { ws, settings, running } = get();
-      if (!ws || running) return;
+      if (!ws || running === 'debug') return;
+      if (running === 'run') {
+        // Debug pressed during a run (usually an auto-run): drop the run.
+        runSeq++;
+        autoPending = false;
+        job?.cancel();
+        job = null;
+      }
       endDebug();
       set({ running: 'debug', output: [], bottomTab: 'debug' });
       const j = debugJob(activeFile(ws).language, currentCode(ws), ws.stdin, settings.backendUrl);
@@ -409,6 +472,8 @@ export const useStore = create<State>((set, get) => {
     },
 
     stop() {
+      autoPending = false;
+      clearTimeout(autoRecheck);
       job?.cancel();
       job = null;
       endDebug();

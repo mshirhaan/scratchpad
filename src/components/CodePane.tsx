@@ -1,5 +1,5 @@
 import Editor, { type OnMount } from '@monaco-editor/react';
-import { Bug, Eraser, Highlighter, Laser, Minus, Play, Plus, RotateCcw, Square, X } from 'lucide-react';
+import { Bug, Eraser, Highlighter, Laser, Minus, Play, Plus, RotateCcw, Square, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LANG_BY_ID, LANGUAGES } from '../languages';
 import '../monaco';
@@ -71,6 +71,25 @@ export default function CodePane() {
   const code = currentCode(ws);
   // Presenting tools over the editor: the laser pointer or the highlighter.
   const [pen, setPen] = useState<null | 'laser' | 'highlight'>(null);
+
+  // Auto-run: run a moment after each change to the code or the input.
+  // Server languages compile on every run, so they wait a little longer.
+  const autoRun = Boolean(settings.autoRun);
+  useEffect(() => {
+    if (!autoRun) return;
+    const t = setTimeout(() => useStore.getState().runCode({ auto: true }), LANG_BY_ID[file.language].runs === 'server' ? 1200 : 500);
+    return () => clearTimeout(t);
+  }, [autoRun, code, ws.stdin, file.id, file.language]);
+
+  // With auto-run, most runs take a few milliseconds; only swap Run for Stop
+  // when one is still going after a moment, so the toolbar doesn't flicker.
+  const [showStop, setShowStop] = useState(false);
+  useEffect(() => {
+    if (!running) return setShowStop(false);
+    if (running === 'debug' || !autoRun) return setShowStop(true);
+    const t = setTimeout(() => setShowStop(true), 500);
+    return () => clearTimeout(t);
+  }, [running, autoRun]);
   const exitPen = useCallback(() => setPen(null), []);
   const togglePen = (p: 'laser' | 'highlight') => setPen((cur) => (cur === p ? null : p));
 
@@ -200,13 +219,13 @@ export default function CodePane() {
             <option key={l.id} value={l.id}>{l.label}</option>
           ))}
         </select>
-        {running ? (
+        {showStop ? (
           <button className="btn btn-stop" onClick={s.stop}>
             <Square size={13} /> Stop
           </button>
         ) : (
           <>
-            <button className="btn btn-run" onClick={s.runCode} title="Run (Ctrl/⌘ + Enter)">
+            <button className="btn btn-run" onClick={() => s.runCode()} title="Run (Ctrl/⌘ + Enter)">
               <Play size={14} /> Run
             </button>
             <button className="btn btn-debug" onClick={s.startDebug} disabled={!lang.debug} title={debugTitle}>
@@ -214,6 +233,14 @@ export default function CodePane() {
             </button>
           </>
         )}
+        <button
+          className={`btn btn-auto${autoRun ? ' on' : ''}`}
+          onClick={() => s.updateSettings({ autoRun: !autoRun })}
+          aria-pressed={autoRun}
+          title={autoRun ? 'Auto-run is on: the code runs a moment after you stop typing. Click to turn off' : 'Auto-run: run the code automatically a moment after each change'}
+        >
+          <Zap size={13} /> Auto
+        </button>
         {needsServer && server === null && <span className="hint warn" title='Start the server with "npm run server"'>server offline</span>}
         {runBlocked && <span className="hint warn">{lang.label} is not installed on the server</span>}
         <span className="spacer" />

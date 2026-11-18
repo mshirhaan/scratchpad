@@ -9,6 +9,8 @@ export type OutFn = (stream: 'stdout' | 'stderr', text: string) => void;
 export interface Job<T> {
   promise: Promise<T>;
   cancel: () => void;
+  /** When the code itself began running (after any runtime download), or null if not yet. */
+  startedAt?: () => number | null;
 }
 
 const BROWSER_MAX_STEPS = 5000;
@@ -32,6 +34,7 @@ function workerJob<T>(language: LangId, mode: 'run' | 'debug', code: string, std
   const worker = isPy ? getPyWorker() : new Worker(new URL('./js.worker.ts', import.meta.url), { type: 'module' });
   let finish: (fn: () => void) => void = () => {};
   let cancelFn: () => void = () => {};
+  let startedAt: number | null = null;
   const promise = new Promise<T>((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const kill = () => {
@@ -45,6 +48,7 @@ function workerJob<T>(language: LangId, mode: 'run' | 'debug', code: string, std
       fn();
     };
     const arm = () => {
+      startedAt = performance.now();
       timer = setTimeout(() => finish(() => {
         kill();
         reject(new RunError(`Time limit exceeded (${BROWSER_TIMEOUT / 1000}s). Is there an infinite loop?`));
@@ -76,7 +80,7 @@ function workerJob<T>(language: LangId, mode: 'run' | 'debug', code: string, std
       reject(new RunError('Stopped.'));
     });
   });
-  return { promise, cancel: () => cancelFn() };
+  return { promise, cancel: () => cancelFn(), startedAt: () => startedAt };
 }
 
 export interface ServerInfo {
@@ -99,6 +103,7 @@ export async function serverInfo(backendUrl: string): Promise<ServerInfo | null>
 
 function serverJob<T>(backendUrl: string, path: 'run' | 'debug', language: LangId, code: string, stdin: string): Job<T> {
   const ctl = new AbortController();
+  const startedAt = performance.now();
   const promise = (async () => {
     let r: Response;
     try {
@@ -124,7 +129,7 @@ function serverJob<T>(backendUrl: string, path: 'run' | 'debug', language: LangI
     if (!r.ok) throw new RunError(data.error || `Server error ${r.status}`);
     return data as T;
   })();
-  return { promise, cancel: () => ctl.abort() };
+  return { promise, cancel: () => ctl.abort(), startedAt: () => startedAt };
 }
 
 export function run(language: LangId, code: string, stdin: string, backendUrl: string, onOut: OutFn): Job<RunResult> {
@@ -132,6 +137,7 @@ export function run(language: LangId, code: string, stdin: string, backendUrl: s
   const job = serverJob<RunResult>(backendUrl, 'run', language, code, stdin);
   return {
     cancel: job.cancel,
+    startedAt: job.startedAt,
     promise: job.promise.then((res) => {
       if (res.stdout) onOut('stdout', res.stdout);
       if (res.stderr) onOut('stderr', res.stderr);
