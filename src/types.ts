@@ -87,7 +87,10 @@ export interface Settings {
 
 export type Val =
   | { k: 'num' | 'str' | 'bool' | 'null' | 'fn' | 'other'; v: string }
-  | { k: 'obj'; label: string; e: [string, Val][]; more?: number };
+  /** `id` identifies an object of the user's own class (the same node seen
+   *  through head, tail and curr has one id). An object reached a second time
+   *  within one variable comes as a reference: its id with no fields. */
+  | { k: 'obj'; label: string; e: [string, Val][]; more?: number; id?: string };
 
 export interface Frame {
   name: string;

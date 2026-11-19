@@ -47,6 +47,27 @@ function inspect(v: any, depth = 0, seen = new Set<any>()): string {
 
 // ---- debugger value snapshots ----
 
+// Ids for objects of the user's classes, stable for the whole run, so the
+// same node seen through head, tail and curr can be matched up.
+const objIds = new WeakMap<object, string>();
+let nextObjId = 1;
+const idOf = (o: object) => {
+  let id = objIds.get(o);
+  if (!id) objIds.set(o, (id = String(nextObjId++)));
+  return id;
+};
+// Objects already written within the current variable. A link to another
+// object of the same class (next, prev) is followed without using up depth,
+// up to CHAIN_MAX objects, so a whole linked list arrives; a repeat (a cycle,
+// or tail after head) is sent as a reference to its id.
+const seen = new Set<string>();
+const CHAIN_MAX = 60;
+
+function snapTop(v: any): Val {
+  seen.clear();
+  return snap(v, 5);
+}
+
 function snap(v: any, depth: number): Val {
   if (v === null) return { k: 'null', v: 'null' };
   if (v === undefined) return { k: 'null', v: 'undefined' };
@@ -92,18 +113,22 @@ function snap(v: any, depth: number): Val {
   if (v instanceof Date || v instanceof RegExp) return { k: 'other', v: String(v) };
   const keys = Object.keys(v);
   const label = v.constructor && v.constructor.name ? v.constructor.name : 'Object';
-  if (depth <= 0) return { k: 'obj', label, e: [], more: keys.length };
+  const id = idOf(v);
+  if (depth <= 0 || seen.has(id)) return { k: 'obj', label, e: [], more: Math.max(keys.length, 1), id };
+  seen.add(id);
   const e: [string, Val][] = [];
   for (const key of keys.slice(0, MAX_ITEMS)) {
     let val: Val;
     try {
-      val = snap(v[key], depth - 1);
+      const x = v[key];
+      const link = x !== null && typeof x === 'object' && Object.getPrototypeOf(x) === Object.getPrototypeOf(v) && seen.size < CHAIN_MAX;
+      val = snap(x, link ? depth : depth - 1);
     } catch {
       val = { k: 'other', v: '<unreadable>' };
     }
     e.push([key, val]);
   }
-  return { k: 'obj', label, e, ...(keys.length > MAX_ITEMS ? { more: keys.length - MAX_ITEMS } : {}) };
+  return { k: 'obj', label, e, id, ...(keys.length > MAX_ITEMS ? { more: keys.length - MAX_ITEMS } : {}) };
 }
 
 class StepLimit extends Error {}
@@ -195,7 +220,7 @@ self.onmessage = async (ev: MessageEvent) => {
         // Outer helper functions are noise; outer data (memo tables, shared arrays) is what matters.
         if (i >= ownCount && typeof value === 'function') continue;
         if (list[i] === 'this' && (value === undefined || value === globalThis)) continue;
-        vars.push([list[i], snap(value, 5)]);
+        vars.push([list[i], snapTop(value)]);
       }
       top.vars = vars;
     }
@@ -216,7 +241,7 @@ self.onmessage = async (ev: MessageEvent) => {
     record(line);
     const step = steps[steps.length - 1];
     const last = step.stack[step.stack.length - 1];
-    step.stack[step.stack.length - 1] = { ...last, vars: [...last.vars, ['⏎ return', snap(value, 5)]] };
+    step.stack[step.stack.length - 1] = { ...last, vars: [...last.vars, ['⏎ return', snapTop(value)]] };
     step.ev = 'return';
     lastKey = '';
     return value;

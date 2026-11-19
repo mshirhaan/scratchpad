@@ -1,9 +1,11 @@
 // Draws the selected frame's data structures for the current debugger step:
 // arrays and strings as boxes with index variables pointing into them,
-// 2-D arrays as a table, maps as key → value rows, and sets as chips.
+// 2-D arrays as a table, maps as key → value rows, sets as chips, and linked
+// lists as nodes joined by arrows.
 // Cells that changed since the previous step are highlighted.
 import type { ReactElement } from 'react';
 import type { Val } from '../types';
+import { heapOf, isNode, linkedLists, type Heap } from './LinkedListView';
 import { cellText, charsOf, COL_NAMES, intOf, isGrid, isMap, isObj, isPointerName, isSeq, isSet, preview, ROW_NAMES, seqLength, type Obj } from '../values';
 
 const POINTER_COLORS = ['var(--accent)', 'var(--blue)', 'var(--amber)', '#c084fc', 'var(--red)', '#f472b6'];
@@ -204,15 +206,16 @@ const isStructure = (v: Val) => isSeq(v) || isMap(v) || isSet(v);
 const SIZE_FIELD = /^(?:size|count|length|len|top)$/i;
 
 /**
- * Objects such as self / this that hold arrays, maps or sets are drawn through
- * their fields, named like self.arr and self.count. Other objects (a linked
- * list node, say) are left out, as before.
+ * Objects such as self / this that hold arrays, maps, sets or linked-list
+ * nodes are drawn through their fields, named like self.arr, self.head and
+ * self.count. A node itself is drawn as part of its list.
  */
-function expand(vars: Vars): Vars {
+function expand(vars: Vars, heap: Heap): Vars {
   const out: Vars = [];
+  const drawn = (x: Val) => isStructure(x) || isNode(x, heap);
   for (const [name, v] of vars) {
-    if (isObj(v) && !isStructure(v) && v.e.some(([, x]) => isStructure(x))) {
-      for (const [k, x] of v.e) if (isObj(x) ? isStructure(x) : x.k !== 'fn') out.push([`${name}.${k}`, x]);
+    if (isObj(v) && !drawn(v) && v.e.some(([, x]) => drawn(x))) {
+      for (const [k, x] of v.e) if (isObj(x) ? drawn(x) : x.k !== 'fn') out.push([`${name}.${k}`, x]);
     } else {
       out.push([name, v]);
     }
@@ -226,8 +229,9 @@ const isPointer = (name: string) => {
 };
 
 export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }: { vars: Vars; prevVars: Vars | null }) {
-  const vars = expand(frameVars);
-  const prevVars = prevFrameVars && expand(prevFrameVars);
+  const heap = heapOf(frameVars);
+  const vars = expand(frameVars, heap);
+  const prevVars = prevFrameVars && expand(prevFrameVars, heapOf(prevFrameVars));
   const prev = new Map(prevVars ?? []);
 
   // Index variables: integer locals with pointer-like names, each with its own colour.
@@ -237,19 +241,24 @@ export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }:
     if (n !== null && isPointer(name)) pointers.push({ name, value: n, color: POINTER_COLORS[pointers.length % POINTER_COLORS.length] });
   }
   const pointerColor = new Map(pointers.map((p) => [p.name, p.color]));
-  const inRange = (len: number) => pointers.filter((p) => p.value >= 0 && p.value <= len);
+  // A field such as self.size only points into arrays of the same object (self.arr).
+  const owner = (n: string) => n.slice(0, n.lastIndexOf('.'));
+  const inRange = (len: number, target: string) =>
+    pointers.filter((p) => p.value >= 0 && p.value <= len && (!p.name.includes('.') || owner(p.name) === owner(target)));
 
   const scalars: [string, Val][] = [];
   const blocks: ReactElement[] = [];
   for (const [name, v] of vars) {
     const pv = prev.get(name);
-    if (isObj(v)) {
+    if (isNode(v, heap)) {
+      // drawn with its list below
+    } else if (isObj(v)) {
       if (isGrid(v)) {
         blocks.push(<GridView key={name} name={name} v={v} prev={pv} vars={vars} />);
       } else if (isSeq(v)) {
         const cells = v.e.map(([, x]) => cellText(x));
         const prevCells = pv && isSeq(pv) ? (pv as Obj).e.map(([, x]) => cellText(x)) : null;
-        blocks.push(<ArrayView key={name} name={name} label={v.label} cells={cells} prevCells={prevCells} len={seqLength(v)} pointers={inRange(seqLength(v))} />);
+        blocks.push(<ArrayView key={name} name={name} label={v.label} cells={cells} prevCells={prevCells} len={seqLength(v)} pointers={inRange(seqLength(v), name)} />);
       } else if (isMap(v)) {
         blocks.push(<MapView key={name} name={name} v={v} prev={pv} />);
       } else if (isSet(v)) {
@@ -258,13 +267,15 @@ export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }:
     } else if (v.k !== 'fn') {
       // A string with an index variable inside it is drawn as boxes, one per character.
       const chars = charsOf(v);
-      if (chars && chars.length > 1 && chars.length <= 80 && inRange(chars.length).length) {
+      if (chars && chars.length > 1 && chars.length <= 80 && inRange(chars.length, name).length) {
         const prevChars = pv ? charsOf(pv) : null;
-        blocks.push(<ArrayView key={name} name={name} label={`string (${chars.length})`} cells={chars} prevCells={prevChars} len={chars.length} pointers={inRange(chars.length)} />);
+        blocks.push(<ArrayView key={name} name={name} label={`string (${chars.length})`} cells={chars} prevCells={prevChars} len={chars.length} pointers={inRange(chars.length, name)} />);
       }
       scalars.push([name, v]);
     }
   }
+
+  const lists = linkedLists(vars, prevVars, heap);
 
   return (
     <div className="viz">
@@ -284,9 +295,10 @@ export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }:
         </div>
       )}
       {blocks}
-      {blocks.length === 0 && (
+      {lists}
+      {blocks.length === 0 && lists.length === 0 && (
         <div className="viz-hint muted">
-          Arrays, 2-D arrays, maps and sets in this function are drawn here. Strings are drawn too once an index variable such as <code>i</code>,{' '}
+          Arrays, 2-D arrays, maps, sets and linked lists in this function are drawn here. Strings are drawn too once an index variable such as <code>i</code>,{' '}
           <code>left</code> or <code>right</code> points into them.
         </div>
       )}

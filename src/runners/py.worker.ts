@@ -78,6 +78,18 @@ def _key(k):
     except Exception:
         return "<key>"
 
+# Objects of the user's classes already written within the current variable,
+# and how many: a node's link to another node of its class (next, prev) is
+# followed without using up depth, up to _CHAIN_MAX objects, so a whole
+# linked list arrives. A repeat (a cycle, or tail after head) is sent as a
+# reference to its id.
+_seen = set()
+_CHAIN_MAX = 60
+
+def _ser_top(v):
+    _seen.clear()
+    return _ser(v, 5)
+
 def _ser(v, depth):
     if v is None:
         return _prim("null", "None")
@@ -136,9 +148,15 @@ def _ser(v, depth):
                 if hasattr(v, s):
                     attrs[s] = getattr(v, s)
         if attrs is not None and type(v).__module__ in ("__main__", "builtins"):
-            if depth <= 0:
-                return {"k": "obj", "label": name, "e": [], "more": len(attrs)}
-            return {"k": "obj", "label": name, "e": [[str(k), _ser(x, depth - 1)] for k, x in list(attrs.items())[:_MAX_ITEMS]]}
+            oid = "%x" % id(v)
+            if depth <= 0 or oid in _seen:
+                return {"k": "obj", "label": name, "e": [], "more": max(len(attrs), 1), "id": oid}
+            _seen.add(oid)
+            e = []
+            for k, x in list(attrs.items())[:_MAX_ITEMS]:
+                link = type(x) is type(v) and len(_seen) < _CHAIN_MAX
+                e.append([str(k), _ser(x, depth if link else depth - 1)])
+            return {"k": "obj", "label": name, "e": e, "id": oid}
         return _prim("other", _clip(repr(v)))
     except Exception as e:
         return _prim("other", "<%s>" % type(e).__name__)
@@ -172,7 +190,7 @@ def _frame_vars(frame):
             continue
         if isinstance(v, _SKIP):
             continue
-        out.append([k, _ser(v, 5)])
+        out.append([k, _ser_top(v)])
     # Inside a function, also show the globals it uses.
     if frame.f_code.co_name != "<module>":
         g = frame.f_globals
@@ -182,7 +200,7 @@ def _frame_vars(frame):
             v = g[k]
             if isinstance(v, _SKIP) or callable(v):
                 continue
-            out.append([k, _ser(v, 5)])
+            out.append([k, _ser_top(v)])
     return out
 
 def debug_code(src, stdin, max_steps):
@@ -230,7 +248,7 @@ def debug_code(src, stdin, max_steps):
                 unwinding.discard(id(frame))
             elif len(steps) < max_steps:
                 stack = snapshot(frame)
-                stack[-1]["vars"].append(["⏎ return", _ser(arg, 5)])
+                stack[-1]["vars"].append(["⏎ return", _ser_top(arg)])
                 steps.append({"line": frame.f_lineno, "stack": stack, "out": out.total, "ev": "return"})
         return tracer
 

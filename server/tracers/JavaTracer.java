@@ -219,7 +219,7 @@ public class JavaTracer {
                 ObjectReference self = f.thisObject();
                 if (self != null) {
                     stack.append("[\"this\",");
-                    ser(self, MAX_DEPTH, stack);
+                    serTop(self, stack);
                     stack.append(']');
                     firstVar = false;
                 }
@@ -232,7 +232,7 @@ public class JavaTracer {
                         firstVar = false;
                         localNames.add(lv.name());
                         stack.append('[').append(quote(lv.name())).append(',');
-                        ser(values.get(lv), MAX_DEPTH, stack);
+                        serTop(values.get(lv), stack);
                         stack.append(']');
                     }
                 } catch (AbsentInformationException ignored) {
@@ -253,13 +253,13 @@ public class JavaTracer {
                     if (!firstVar) stack.append(',');
                     firstVar = false;
                     stack.append('[').append(quote(fld.name())).append(',');
-                    ser(val, MAX_DEPTH, stack);
+                    serTop(val, stack);
                     stack.append(']');
                 }
                 if (ret != null && i == 0) {
                     if (!firstVar) stack.append(',');
                     stack.append("[\"⏎ return\",");
-                    ser(ret, MAX_DEPTH, stack);
+                    serTop(ret, stack);
                     stack.append(']');
                 }
                 stack.append("]}");
@@ -403,6 +403,19 @@ public class JavaTracer {
         return res;
     }
 
+    // Objects of the user's classes already written within the current
+    // variable. A field linking to another object of the same class (next,
+    // prev) is followed without using up depth, up to CHAIN_MAX objects, so a
+    // whole linked list arrives; a repeat (a cycle, or tail after head) is
+    // written as a reference to its id.
+    static final Set<Long> seen = new HashSet<>();
+    static final int CHAIN_MAX = 60;
+
+    static void serTop(Value v, StringBuilder sb) {
+        seen.clear();
+        ser(v, MAX_DEPTH, sb);
+    }
+
     static void ser(Value v, int depth, StringBuilder sb) {
         try {
             serInner(v, depth, sb);
@@ -473,7 +486,10 @@ public class JavaTracer {
             prim("other", name + "." + (n instanceof StringReference ? ((StringReference) n).value() : "?"), sb);
             return;
         }
-        if (depth <= 0) { stub(name, sb); return; }
+        if (depth <= 0) {
+            sb.append("{\"k\":\"obj\",\"label\":").append(quote(name)).append(",\"e\":[],\"more\":1,\"id\":\"").append(o.uniqueID()).append("\"}");
+            return;
+        }
 
         switch (cn) {
             case "java.util.ArrayList": {
@@ -573,7 +589,12 @@ public class JavaTracer {
         if (excluded(cn)) { prim("other", name, sb); return; }
 
         // Any other object: show its instance fields.
-        sb.append("{\"k\":\"obj\",\"label\":").append(quote(name)).append(",\"e\":[");
+        long id = o.uniqueID();
+        if (!seen.add(id)) {
+            sb.append("{\"k\":\"obj\",\"label\":").append(quote(name)).append(",\"e\":[],\"more\":1,\"id\":\"").append(id).append("\"}");
+            return;
+        }
+        sb.append("{\"k\":\"obj\",\"label\":").append(quote(name)).append(",\"id\":\"").append(id).append("\",\"e\":[");
         boolean first = true;
         int shown = 0;
         for (Field f : o.referenceType().allFields()) {
@@ -582,7 +603,9 @@ public class JavaTracer {
             if (!first) sb.append(',');
             first = false;
             sb.append('[').append(quote(f.name())).append(',');
-            ser(o.getValue(f), depth - 1, sb);
+            Value fv = o.getValue(f);
+            boolean link = fv instanceof ObjectReference && ((ObjectReference) fv).referenceType().equals(o.referenceType()) && seen.size() < CHAIN_MAX;
+            ser(fv, link ? depth : depth - 1, sb);
             sb.append(']');
         }
         sb.append("]}");
