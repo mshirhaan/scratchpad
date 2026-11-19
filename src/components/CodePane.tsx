@@ -1,15 +1,25 @@
 import Editor, { type OnMount } from '@monaco-editor/react';
-import { Bug, Eraser, Highlighter, Laser, Minus, Play, Plus, RotateCcw, Square, X, Zap } from 'lucide-react';
+import { Bug, Download, Eraser, Highlighter, Laser, Minus, Play, Plus, RotateCcw, Square, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LANG_BY_ID, LANGUAGES } from '../languages';
 import '../monaco';
 import { warmPython } from '../runners';
-import { activeFile, currentCode, fileBreakpoints, fileHighlights, useStore, type BottomTab } from '../store';
+import { activeFile, currentCode, fileBreakpoints, fileCode, fileHighlights, useStore, type BottomTab } from '../store';
 import type { LangId } from '../types';
 import DebugPanel from './DebugPanel';
 import HighlightOverlay from './HighlightOverlay';
 import LaserOverlay from './LaserOverlay';
 import TabStrip from './TabStrip';
+
+/** Saves text as a file through the browser's download. */
+function downloadText(filename: string, text: string) {
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 type MonacoEditor = Parameters<OnMount>[0];
 type Monaco = Parameters<OnMount>[1];
@@ -294,6 +304,16 @@ export default function CodePane() {
         onSelect={s.selectFile}
         onAdd={s.addFile}
         onRename={s.renameFile}
+        menuItems={(id) => [
+          {
+            label: 'Download',
+            icon: Download,
+            onClick: () => {
+              const f = ws.files.find((x) => x.id === id);
+              if (f) downloadText(`${f.name}.${LANG_BY_ID[f.language].ext}`, fileCode(f));
+            },
+          },
+        ]}
         onClose={(id) => {
           const f = ws.files.find((x) => x.id === id);
           const hasCode = f && Object.entries(f.code).some(([l, c]) => c && c.trim() && c !== LANG_BY_ID[l as LangId].template);
