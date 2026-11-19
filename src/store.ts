@@ -6,6 +6,26 @@ import * as db from './storage';
 import type { Canvas, CodeFile, LangId, Problem, RunResult, Scene, Settings, Status, Step, Trace, Workspace } from './types';
 
 export type View = 'split' | 'code' | 'draw' | 'roadmap';
+
+// The chosen view (Split / Code / Draw / Roadmap) is remembered in this
+// browser so a reload opens where you left off.
+const VIEW_KEY = 'scratchpad.view';
+const VIEWS: View[] = ['split', 'code', 'draw', 'roadmap'];
+function savedView(): View {
+  try {
+    const v = localStorage.getItem(VIEW_KEY) as View | null;
+    return v && VIEWS.includes(v) ? v : 'split';
+  } catch {
+    return 'split';
+  }
+}
+function rememberView(v: View) {
+  try {
+    localStorage.setItem(VIEW_KEY, v);
+  } catch {
+    /* storage unavailable */
+  }
+}
 export type BottomTab = 'console' | 'input' | 'debug' | 'notes';
 export interface OutChunk {
   s: 'stdout' | 'stderr' | 'info' | 'error';
@@ -194,7 +214,7 @@ export const useStore = create<State>((set, get) => {
     activeId: SCRATCH_ID,
     ws: null,
     wsEpoch: 0,
-    view: 'split',
+    view: savedView(),
     saveState: 'saved',
     server: null,
     running: null,
@@ -219,12 +239,16 @@ export const useStore = create<State>((set, get) => {
       void db.persistStorage(); // ask the browser not to clear our data when disk space runs low
     },
 
-    setView: (view) => set({ view }),
+    setView: (view) => {
+      rememberView(view);
+      set({ view });
+    },
 
     async openWorkspace(id, view = 'split') {
       await get().flush();
       get().stop();
       const ws = (await db.loadWorkspace(id)) ?? newWorkspace(id, get().settings.defaultLanguage);
+      rememberView(view);
       set((s) => ({ activeId: id, ws, wsEpoch: s.wsEpoch + 1, view, output: [], trace: null, stepIndex: 0, frameIndex: null, bottomTab: 'console' }));
       saveMetaSoon();
     },
