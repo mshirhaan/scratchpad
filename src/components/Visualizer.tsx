@@ -6,7 +6,7 @@
 import type { ReactElement } from 'react';
 import type { Val } from '../types';
 import { heapOf, isNode, linkedLists, type Heap } from './LinkedListView';
-import { cellText, charsOf, COL_NAMES, intOf, isGrid, isMap, isObj, isPointerName, isSeq, isSet, preview, ROW_NAMES, seqLength, type Obj } from '../values';
+import { cellText, charsOf, COL_NAMES, indexUses, intOf, isGrid, isMap, isObj, isPointerName, isSeq, isSet, preview, ROW_NAMES, seqLength, type Obj } from '../values';
 
 const POINTER_COLORS = ['var(--accent)', 'var(--blue)', 'var(--amber)', '#c084fc', 'var(--red)', '#f472b6'];
 
@@ -228,7 +228,10 @@ const isPointer = (name: string) => {
   return isPointerName(field) || (field !== name && SIZE_FIELD.test(field));
 };
 
-export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }: { vars: Vars; prevVars: Vars | null }) {
+const lastPart = (n: string) => n.slice(n.lastIndexOf('.') + 1);
+let usesCache: { code: string; uses: Map<string, Set<string>> } | null = null;
+
+export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars, code }: { vars: Vars; prevVars: Vars | null; code?: string }) {
   const heap = heapOf(frameVars);
   const vars = expand(frameVars, heap);
   const prevVars = prevFrameVars && expand(prevFrameVars, heapOf(prevFrameVars));
@@ -240,11 +243,26 @@ export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }:
     const n = intOf(v);
     if (n !== null && isPointer(name)) pointers.push({ name, value: n, color: POINTER_COLORS[pointers.length % POINTER_COLORS.length] });
   }
-  const pointerColor = new Map(pointers.map((p) => [p.name, p.color]));
+  // An index variable is drawn under an array or string only when the code
+  // indexes that array or string with it (key[i], s.charAt(i), ...), so a
+  // plain counter named i isn't shown pointing into some unrelated string.
+  if (code !== undefined && usesCache?.code !== code) usesCache = { code, uses: indexUses(code) };
+  const uses = code !== undefined ? usesCache!.uses : null;
   // A field such as self.size only points into arrays of the same object (self.arr).
   const owner = (n: string) => n.slice(0, n.lastIndexOf('.'));
+  const used = new Set<string>();
   const inRange = (len: number, target: string) =>
-    pointers.filter((p) => p.value >= 0 && p.value <= len && (!p.name.includes('.') || owner(p.name) === owner(target)));
+    pointers.filter(
+      (p) =>
+        p.value >= 0 &&
+        p.value <= len &&
+        (!p.name.includes('.') || owner(p.name) === owner(target)) &&
+        (!uses || Boolean(uses.get(lastPart(target))?.has(lastPart(p.name)))),
+    );
+  const attach = (ps: Pointer[]) => {
+    for (const p of ps) used.add(p.name);
+    return ps;
+  };
 
   const scalars: [string, Val][] = [];
   const blocks: ReactElement[] = [];
@@ -258,7 +276,7 @@ export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }:
       } else if (isSeq(v)) {
         const cells = v.e.map(([, x]) => cellText(x));
         const prevCells = pv && isSeq(pv) ? (pv as Obj).e.map(([, x]) => cellText(x)) : null;
-        blocks.push(<ArrayView key={name} name={name} label={v.label} cells={cells} prevCells={prevCells} len={seqLength(v)} pointers={inRange(seqLength(v), name)} />);
+        blocks.push(<ArrayView key={name} name={name} label={v.label} cells={cells} prevCells={prevCells} len={seqLength(v)} pointers={attach(inRange(seqLength(v), name))} />);
       } else if (isMap(v)) {
         blocks.push(<MapView key={name} name={name} v={v} prev={pv} />);
       } else if (isSet(v)) {
@@ -269,13 +287,15 @@ export default function Visualizer({ vars: frameVars, prevVars: prevFrameVars }:
       const chars = charsOf(v);
       if (chars && chars.length > 1 && chars.length <= 80 && inRange(chars.length, name).length) {
         const prevChars = pv ? charsOf(pv) : null;
-        blocks.push(<ArrayView key={name} name={name} label={`string (${chars.length})`} cells={chars} prevCells={prevChars} len={chars.length} pointers={inRange(chars.length, name)} />);
+        blocks.push(<ArrayView key={name} name={name} label={`string (${chars.length})`} cells={chars} prevCells={prevChars} len={chars.length} pointers={attach(inRange(chars.length, name))} />);
       }
       scalars.push([name, v]);
     }
   }
 
   const lists = linkedLists(vars, prevVars, heap);
+  // Only index variables drawn under something keep their colour in the list above.
+  const pointerColor = new Map(pointers.filter((p) => used.has(p.name)).map((p) => [p.name, p.color]));
 
   return (
     <div className="viz">

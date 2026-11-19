@@ -1,7 +1,7 @@
 import { ArrowDownToLine, Maximize2, X, ArrowUpFromLine, Bug, ChevronDown, ChevronRight, FastForward, Redo2, Rewind, SkipBack, Square, Undo2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { LANG_BY_ID } from '../languages';
-import { activeFile, useStore } from '../store';
+import { activeFile, currentCode, useStore } from '../store';
 import type { Frame, Val } from '../types';
 import { preview } from '../values';
 import CallTreeView from './CallTreeView';
@@ -48,6 +48,7 @@ export default function DebugPanel() {
   const debugNote = useStore((s) => s.debugNote);
   const view = useStore((s) => s.settings.debugView ?? 'visual');
   const language = useStore((s) => (s.ws ? activeFile(s.ws).language : undefined));
+  const code = useStore((s) => (s.ws ? currentCode(s.ws) : undefined));
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [bigTree, setBigTree] = useState(false);
   useEffect(() => {
@@ -173,7 +174,7 @@ export default function DebugPanel() {
           </div>
           {view === 'calls' && <CallTreeView trace={trace} stepIndex={stepIndex} />}
           {view !== 'calls' && frame && frame.vars.length === 0 && <div className="var-row muted" style={{ paddingLeft: 12 }}>No variables yet</div>}
-          {frame && frame.vars.length > 0 && view === 'visual' && <Visualizer vars={frame.vars} prevVars={comparable ? prevFrame!.vars : null} />}
+          {frame && frame.vars.length > 0 && view === 'visual' && <Visualizer vars={frame.vars} prevVars={comparable ? prevFrame!.vars : null} code={code} />}
           {view === 'vars' &&
             frame?.vars.map(([k, v]) => (
               <VarRow key={k} name={k} val={v} path={`${frame.name}/${k}`} depth={0} changed={comparable && prevVars.get(k) !== JSON.stringify(v)} open={open} toggle={toggle} />

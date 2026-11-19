@@ -86,6 +86,59 @@ const POINTER_NAME =
   /^(?:[ijkpqlr]\d*|lo|hi|low|high|left|right|mid|start|end|begin|slow|fast|head|tail|top|front|rear|cur|curr|pos|ptr|idx|index)$|(?:idx|index|ptr|pos)$|^(?:left|right|lo|hi|low|high|start|end|slow|fast)[_A-Z0-9]/i;
 export const isPointerName = (name: string) => POINTER_NAME.test(name);
 
+/**
+ * Which variables the code uses to index which arrays and strings: for every
+ * `name[...]`, and every `name.charAt(...)`, `name.get(...)` and the like, the
+ * identifiers inside the brackets. `key[i]`, `nums[mid + 1]`, `s[l:r]`,
+ * `self.arr[self.count]` and `list.get(i)` all count. Names are without their
+ * owner (`arr`, `count`), since Java code often leaves out `this.`.
+ */
+/** Keywords and type names, which appear in many statements and link nothing. */
+const NOT_LINKS = new Set(
+  'int long short byte char float double boolean bool void var let const auto unsigned signed size_t String string final static new return if else elif for while in not and or is None null nullptr undefined true false True False this self'.split(' '),
+);
+
+export function indexUses(code: string): Map<string, Set<string>> {
+  const uses = new Map<string, Set<string>>();
+  const open = /(?<![\w$])([A-Za-z_$][\w$]*)\s*(?:\[|\.\s*(?:charAt|codePointAt|get|set|at|substring|subList|slice|splice|remove|insert|pop|add)\s*\()/g;
+  for (let m = open.exec(code); m; m = open.exec(code)) {
+    // Read up to the matching close bracket.
+    let depth = 1;
+    let i = m.index + m[0].length;
+    const from = i;
+    for (; i < code.length && depth > 0; i++) {
+      const c = code[i];
+      if (c === '[' || c === '(') depth++;
+      else if (c === ']' || c === ')') depth--;
+    }
+    const inside = code.slice(from, i - 1).match(/[A-Za-z_$][\w$]*/g) ?? [];
+    if (!inside.length) continue;
+    const set = uses.get(m[1]) ?? new Set<string>();
+    for (const w of inside) set.add(w);
+    uses.set(m[1], set);
+  }
+  // Variables assigned from or into those count too: mid = (lo + hi) // 2 and
+  // lo = mid + 1 tie lo and hi to nums through mid. A plain counter (i += 1)
+  // stays out.
+  const assignments = code
+    .replace(/(["'`])(?:\\.|(?!\1)[^\\\n])*\1/g, '""')
+    .split(/[;\n{}]/)
+    .filter((st) => /(?<![=!<>])=(?![=>])/.test(st))
+    // Names of functions called (len, max, ...) don't link anything.
+    .map((st) => [...st.matchAll(/([A-Za-z_$][\w$]*)(?!\s*\(|[\w$])/g)].map((x) => x[1]).filter((w) => !NOT_LINKS.has(w)));
+  for (const [target, set] of uses) {
+    for (let grew = true; grew; ) {
+      grew = false;
+      for (const ids of assignments) {
+        // Linking through the array's own name would tie k = len(nums) to nums.
+        if (!ids.some((w) => w !== target && set.has(w))) continue;
+        for (const w of ids) if (!set.has(w)) (set.add(w), (grew = true));
+      }
+    }
+  }
+  return uses;
+}
+
 /** Names used for the row and column of a 2-D table such as dp[i][j]. */
 export const ROW_NAMES = ['i', 'r', 'row', 'x'];
 export const COL_NAMES = ['j', 'c', 'col', 'y'];
